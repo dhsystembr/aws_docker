@@ -1,0 +1,55 @@
+version: "3"
+services:
+  db-tst:
+    container_name: db-tst
+    image: postgres:9.6
+    ports:
+      - 5433:5432
+    environment:
+      - POSTGRES_DB=tasks
+      - POSTGRES_PASSWORD=password
+
+  backend:
+    container_name: backend-tst
+    image: back_tst:build_${BUILD_NUMBER}
+    build:
+      context: .
+      args:
+        - WAR_FILE=/target/tasks-backend.war
+        - CONTEXT=tasks-backend
+    networks:
+      - tst_net_back
+      - tst_net_front
+    #ports:
+    #  - 9998:8080
+    environment:
+      - DATABASE_HOST=db
+      - DATABASE_PORT=5432
+      - DATABASE_USER=postgres
+      - DATABASE_PASSWD=passwd
+      #- DATABASE_UPDATE=none
+    depends_on:
+      - db-tst
+
+  frontend:
+    container_name: frontend-tst
+    image: front_tst:build_${BUILD_NUMBER}
+    build:
+        context: .
+        args:
+          - WAR_FILE=frontend/target/tasks.war
+          - CONTEXT=tasks
+    networks:
+      - tst_net_front
+    ports:
+      - 9999:8080
+    environment:
+      - BACKEND_HOST=backend
+      - BACKEND_PORT=8080
+      - APP_VERSION=build_${BUILD_NUMBER}
+    #depends_on:
+      - backend
+ 
+networks:
+  tst_net_front:
+  tst_net_back:
